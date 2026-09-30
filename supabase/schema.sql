@@ -10,6 +10,7 @@ create table if not exists public.days (
   bonus       boolean not null default false,  -- Lagree or core
   walk        boolean not null default false,
   creatine    boolean not null default false,
+  pt          boolean not null default false,  -- physical therapy done
   protein     boolean not null default false,  -- goal ticked by hand
   protein_log jsonb   not null default '[]',   -- [{ "g": 25, "label": "Shake" }, ...]
   sets        jsonb   not null default '{}',   -- { "hip_thrust": [{ "w": 65, "r": 10 }, ...] }
@@ -17,6 +18,9 @@ create table if not exists public.days (
   updated_at  timestamptz not null default now(),
   primary key (user_id, date)
 );
+
+-- Added after launch (safe to re-run).
+alter table public.days add column if not exists pt boolean not null default false;
 
 -- One row per morning measurement.
 create table if not exists public.measures (

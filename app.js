@@ -5,8 +5,8 @@
   var START = new Date(2026, 8, 21);
   var END   = new Date(2027, 2, 21);
   var WEEKS = 26;
-  var P_TARGET = CFG.PROTEIN_TARGET || 90;
-  var P_TOP = CFG.PROTEIN_TOP || 100;
+  var P_TARGET = CFG.PROTEIN_TARGET || 75;
+  var P_TOP = CFG.PROTEIN_TOP || 90;
   var PRESETS = CFG.PROTEIN_PRESETS || [];
   var PHASES = [ {to:4,name:"Build the habit"}, {to:17,name:"Main block"}, {to:23,name:"Sharpen"}, {to:26,name:"Hold"} ];
   var MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -60,8 +60,13 @@
   function parse(s) { var p = s.split("-"); return new Date(+p[0], +p[1] - 1, +p[2]); }
   function sameDay(a, b) { return iso(a) === iso(b); }
   function addDays(d, n) { var x = new Date(d); x.setDate(x.getDate() + n); return x; }
-  function mondayOf(d) { var x = new Date(d); x.setHours(0, 0, 0, 0); return addDays(x, -((x.getDay() + 6) % 7)); }
-  function weekNum(d) { return Math.round((mondayOf(d) - START) / 604800000) + 1; }
+  // Weeks run Sunday to Saturday. Week 1 is the week the plan starts in.
+  function weekStart(d) { var x = new Date(d); x.setHours(0, 0, 0, 0); return addDays(x, -x.getDay()); }
+  function weekNum(d) {
+    var w = Math.round((weekStart(d) - weekStart(START)) / 604800000) + 1;
+    // The last day (Sun Mar 21) begins a 27th Sunday-week; count it as week 26.
+    return d <= addDays(END, 1) && w > WEEKS ? WEEKS : w;
+  }
   function phaseOf(w) { for (var i = 0; i < PHASES.length; i++) if (w <= PHASES[i].to) return PHASES[i].name; return ""; }
   function inPlan(d) { return d >= START && d <= addDays(END, 1); }
   function shortDate(k) { var d = parse(k); return SHORT[d.getMonth()] + " " + d.getDate(); }
@@ -71,7 +76,7 @@
 
   // ---------- day records ----------
   function blank() {
-    return { lift: null, sculpt: false, bonus: false, walk: false, creatine: false, protein: false, protein_log: [], sets: {}, note: "" };
+    return { lift: null, sculpt: false, bonus: false, walk: false, creatine: false, pt: false, protein: false, protein_log: [], sets: {}, note: "" };
   }
   function norm(r) {
     var b = blank();
@@ -128,13 +133,13 @@
   function dayRow(k, r) {
     return {
       user_id: S.uid, date: k, lift: r.lift, sculpt: !!r.sculpt, bonus: !!r.bonus, walk: !!r.walk,
-      creatine: !!r.creatine, protein: !!r.protein, protein_log: r.protein_log || [], sets: r.sets || {},
+      creatine: !!r.creatine, pt: !!r.pt, protein: !!r.protein, protein_log: r.protein_log || [], sets: r.sets || {},
       note: r.note || "", updated_at: new Date().toISOString()
     };
   }
   function fromDayRow(row) {
     return norm({
-      lift: row.lift, sculpt: row.sculpt, bonus: row.bonus, walk: row.walk, creatine: row.creatine,
+      lift: row.lift, sculpt: row.sculpt, bonus: row.bonus, walk: row.walk, creatine: row.creatine, pt: row.pt,
       protein: row.protein, protein_log: row.protein_log, sets: row.sets, note: row.note
     });
   }
@@ -225,7 +230,7 @@
     var first = new Date(S.viewYear, S.viewMonth, 1), today = new Date();
     $("monthTitle").textContent = MONTHS[S.viewMonth] + " " + S.viewYear;
     $("monthMeta").textContent = inPlan(today) ? phaseOf(weekNum(today)) : "Plan runs Sep 21 – Mar 21";
-    var gridStart = mondayOf(first), grid = $("grid");
+    var gridStart = weekStart(first), grid = $("grid");
     grid.textContent = "";
     for (var i = 0; i < 42; i++) {
       var d = addDays(gridStart, i);
@@ -242,6 +247,7 @@
       if (r.bonus) bits.push("Lagree or core");
       if (r.walk) bits.push("Walk");
       if (r.creatine) bits.push("Creatine");
+      if (r.pt) bits.push("Physical therapy");
       if (pMet(r)) bits.push("Protein goal");
       b.setAttribute("aria-label", DAYS[d.getDay()] + " " + SHORT[d.getMonth()] + " " + d.getDate() + (bits.length ? ": " + bits.join(", ") : ""));
       b.appendChild(el("span", "num", String(d.getDate())));
@@ -253,6 +259,7 @@
       if (r.walk) b.appendChild(el("span", "walkbar"));
       if (pMet(r)) b.appendChild(el("span", "pdot"));
       if (r.creatine) b.appendChild(el("span", "cdot"));
+      if (r.pt) b.appendChild(el("span", "xdot"));
       if (r.note && r.note.trim()) b.appendChild(el("span", "ndot"));
       (function (dd) { b.addEventListener("click", function () { S.selected = dd; renderAll(); }); })(d);
       grid.appendChild(b);
@@ -282,15 +289,18 @@
       { cls: "sculpt round", label: "Sculpt", on: r.sculpt, act: function () { r.sculpt = !r.sculpt; } },
       { cls: "core round", label: "Lagree or core", on: r.bonus, act: function () { r.bonus = !r.bonus; } },
       { cls: "walk bar", label: "Walk or jog", on: r.walk, act: function () { r.walk = !r.walk; } },
-      { cls: "creatine", label: "Creatine", on: r.creatine, act: function () { r.creatine = !r.creatine; } },
-      { cls: "protein round", label: "Protein goal", on: pMet(r),
+      { cls: "creatine", label: "Creatine", habit: true, on: r.creatine, act: function () { r.creatine = !r.creatine; } },
+      { cls: "protein round", label: "Protein goal", habit: true, on: pMet(r),
         act: function () {
           if (pTotal(r) >= P_TARGET) { say("Goal already met from the grams you logged."); return false; }
           r.protein = !r.protein;
-        } }
+        } },
+      { cls: "pt", label: "PT", habit: true, on: r.pt, act: function () { r.pt = !r.pt; } }
     ];
     var box = $("toggles");
     box.textContent = "";
+    var rowA = el("div", "tgrow four"), rowB = el("div", "tgrow three");
+    box.appendChild(rowA); box.appendChild(rowB);
     defs.forEach(function (def) {
       var b = el("button", "tg " + def.cls);
       b.type = "button";
@@ -303,7 +313,7 @@
         changed(k);
         renderEditor();
       });
-      box.appendChild(b);
+      (def.habit ? rowB : rowA).appendChild(b);
     });
 
     renderProtein(k, r);
@@ -466,8 +476,8 @@
 
   // ---------- week + totals ----------
   function renderWeek() {
-    var mon = mondayOf(S.selected), w = weekNum(S.selected);
-    var L = 0, Sc = 0, C = 0, W = 0, P = 0, Cr = 0;
+    var mon = weekStart(S.selected), w = weekNum(S.selected);
+    var L = 0, Sc = 0, C = 0, W = 0, P = 0, Cr = 0, Pt = 0;
     for (var i = 0; i < 7; i++) {
       var r = S.days[iso(addDays(mon, i))];
       if (!r) continue;
@@ -477,12 +487,13 @@
       if (r.walk) W++;
       if (pMet(r)) P++;
       if (r.creatine) Cr++;
+      if (r.pt) Pt++;
     }
     $("wkLead").textContent = (w >= 1 && w <= WEEKS) ? "Week " + w + " of 26" : "Outside the plan";
     var q = $("wkQuota");
     q.textContent = "";
     [["l", L >= 2, "Lifts", L + "/2"], ["s", Sc >= 2, "Sculpt", Sc + "/2"], ["c", C >= 1, "Lagree or core", String(C)],
-     ["w", W >= 3, "Walk or jog", String(W)], ["p", P >= 5, "Protein", P + "/7"], ["cr", Cr >= 7, "Creatine", Cr + "/7"]]
+     ["w", W >= 3, "Walk or jog", String(W)], ["p", P >= 5, "Protein", P + "/7"], ["cr", Cr >= 7, "Creatine", Cr + "/7"], ["pt", Pt >= 1, "PT", String(Pt)]]
       .forEach(function (c) {
         var chip = el("span", "chip " + c[0] + (c[1] ? " met" : ""), c[2] + " ");
         chip.appendChild(el("b", null, c[3]));
@@ -492,7 +503,7 @@
   }
 
   function renderTotals() {
-    var lifts = 0, studio = 0, walk = 0, prot = 0, crea = 0, full = 0;
+    var lifts = 0, studio = 0, walk = 0, prot = 0, crea = 0, pt = 0, full = 0;
     Object.keys(S.days).forEach(function (k) {
       var r = S.days[k];
       if (r.lift) lifts++;
@@ -501,9 +512,10 @@
       if (r.walk) walk++;
       if (pMet(r)) prot++;
       if (r.creatine) crea++;
+      if (r.pt) pt++;
     });
     for (var w = 1; w <= WEEKS; w++) {
-      var mon = addDays(START, (w - 1) * 7), L = 0, Sc = 0;
+      var mon = addDays(weekStart(START), (w - 1) * 7), L = 0, Sc = 0;
       for (var i = 0; i < 7; i++) {
         var r = S.days[iso(addDays(mon, i))];
         if (!r) continue;
@@ -515,7 +527,7 @@
     var t = $("totals");
     t.textContent = "";
     [[lifts, "lifts", "--lift"], [studio, "studio sessions", "--sculpt"], [walk, "walk or jog days", "--walk"],
-     [prot, "protein days", "--protein"], [crea, "creatine days", "--creatine"], [full, "weeks at full quota", "--gold"]]
+     [prot, "protein days", "--protein"], [crea, "creatine days", "--creatine"], [pt, "PT days", "--pt"], [full, "weeks at full quota", "--gold"]]
       .forEach(function (p) {
         var d = el("div", "tot");
         var big = el("div", "big", String(p[0]));

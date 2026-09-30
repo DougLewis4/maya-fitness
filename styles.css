@@ -13,6 +13,7 @@
   --gold: #E2A32A;
   --protein: #F5A623;
   --creatine: #3B82D6;
+  --pt: #4E9A2F;
   --empty: #F6E3EB;
   --dot-soft: #F2A9C9;
 }
@@ -21,14 +22,14 @@
     --ground: #1C0F1A; --raised: #261523; --ink: #FBEAF3; --ink-soft: #C9A5BC;
     --ink-faint: #9C7A90; --rule: #3C2336; --lift: #FF5DA0; --sculpt: #FF9469;
     --core: #A98BFF; --walk: #2ED6C0; --gold: #F0BC52; --protein: #FFC15E;
-    --creatine: #6FB0F5; --empty: #35202E; --dot-soft: #8A3A61;
+    --creatine: #6FB0F5; --pt: #8FD16B; --empty: #35202E; --dot-soft: #8A3A61;
   }
 }
 :root[data-theme="dark"] {
   --ground: #1C0F1A; --raised: #261523; --ink: #FBEAF3; --ink-soft: #C9A5BC;
   --ink-faint: #9C7A90; --rule: #3C2336; --lift: #FF5DA0; --sculpt: #FF9469;
   --core: #A98BFF; --walk: #2ED6C0; --gold: #F0BC52; --protein: #FFC15E;
-  --creatine: #6FB0F5; --empty: #35202E; --dot-soft: #8A3A61;
+  --creatine: #6FB0F5; --pt: #8FD16B; --empty: #35202E; --dot-soft: #8A3A61;
 }
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
@@ -126,6 +127,11 @@ input::placeholder, textarea::placeholder { color: var(--ink-faint); opacity: .5
 .walkbar { position: absolute; left: 8px; right: 8px; bottom: 4px; height: 3.5px; border-radius: 99px; background: var(--walk); }
 .pdot { position: absolute; top: 6px; right: 6px; width: 6px; height: 6px; border-radius: 50%; background: var(--protein); }
 .cdot { position: absolute; top: 14px; right: 6px; width: 6px; height: 6px; border-radius: 2px; background: var(--creatine); }
+/* PT: a small plus sign under the note corner */
+.xdot { position: absolute; top: 14px; left: 5px; width: 7px; height: 7px; }
+.xdot::before, .xdot::after { content: ""; position: absolute; background: var(--pt); border-radius: 1px; }
+.xdot::before { left: 2.5px; top: 0; width: 2px; height: 7px; }
+.xdot::after { top: 2.5px; left: 0; width: 7px; height: 2px; }
 .ndot {
   position: absolute; top: 7px; left: 6px; width: 0; height: 0;
   border-left: 5px solid var(--ink-faint); border-bottom: 5px solid transparent;
@@ -136,7 +142,10 @@ input::placeholder, textarea::placeholder { color: var(--ink-faint); opacity: .5
 .editor { margin-top: 18px; border: 1.5px solid var(--ink); border-radius: 16px; padding: 15px 15px 16px; background: var(--raised); }
 .editor h2 { font-family: Fraunces, Georgia, serif; font-variation-settings: "SOFT" 50, "WONK" 1; font-weight: 500; font-size: 19px; margin: 0 0 2px; }
 .editor .hint { font-size: 12.5px; color: var(--ink-faint); margin: 0 0 13px; }
-.toggles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.toggles { display: flex; flex-direction: column; gap: 8px; }
+.tgrow { display: grid; gap: 8px; }
+.tgrow.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.tgrow.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .tg {
   padding: 11px 6px 10px; border-radius: 12px; cursor: pointer;
   border: 1.5px solid var(--rule); background: none; color: var(--ink-soft); font-size: 12.5px;
@@ -164,6 +173,12 @@ input::placeholder, textarea::placeholder { color: var(--ink-faint); opacity: .5
 .tg.creatine .glyph { border-radius: 4px; }
 .tg.creatine[aria-pressed="true"] { border-color: var(--creatine); background: color-mix(in srgb, var(--creatine) 12%, transparent); }
 .tg.creatine[aria-pressed="true"] .glyph { background: var(--creatine); border-color: var(--creatine); }
+.tg.pt .glyph { border: none; position: relative; }
+.tg.pt .glyph::before, .tg.pt .glyph::after { content: ""; position: absolute; background: var(--empty); border-radius: 2px; }
+.tg.pt .glyph::before { left: 6px; top: 1px; width: 4px; height: 14px; }
+.tg.pt .glyph::after { top: 6px; left: 1px; width: 14px; height: 4px; }
+.tg.pt[aria-pressed="true"] { border-color: var(--pt); background: color-mix(in srgb, var(--pt) 12%, transparent); }
+.tg.pt[aria-pressed="true"] .glyph::before, .tg.pt[aria-pressed="true"] .glyph::after { background: var(--pt); }
 
 /* ---- panels inside the editor ---- */
 .panel { margin-top: 14px; border-top: 1px solid var(--rule); padding-top: 13px; }
@@ -245,6 +260,7 @@ input::placeholder, textarea::placeholder { color: var(--ink-faint); opacity: .5
 .chip.met.w { background: var(--walk); }
 .chip.met.p { background: var(--protein); color: #3B1E34; }
 .chip.met.cr { background: var(--creatine); }
+.chip.met.pt { background: var(--pt); color: #1C2A12; }
 .bravo { margin-top: 11px; font-family: Fraunces, Georgia, serif; font-variation-settings: "SOFT" 50, "WONK" 1; font-size: 15px; color: var(--gold); }
 .totals { display: flex; gap: 20px; margin-top: 22px; flex-wrap: wrap; }
 .tot .big { font-family: Fraunces, Georgia, serif; font-variation-settings: "SOFT" 50, "WONK" 1; font-weight: 500; font-size: 26px; line-height: 1.1; }

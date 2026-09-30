@@ -1,6 +1,6 @@
 // Offline support: keeps a copy of the app's files so it opens without signal.
 // Bump VERSION whenever you publish changes so phones pick up the new files.
-var VERSION = "w26-v1";
+var VERSION = "w26-v2";
 var SHELL = [
   "./", "index.html", "styles.css", "app.js", "config.js", "manifest.webmanifest",
   "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"

@@ -5,8 +5,8 @@ window.APP_CONFIG = {
   SUPABASE_ANON_KEY: "sb_publishable_kLEJ_YWGuNhUSZhgmoJfOQ_x7LzJ9Fy",
 
   // Daily protein goal in grams (the goal counts as met at the first number).
-  PROTEIN_TARGET: 90,
-  PROTEIN_TOP: 100,
+  PROTEIN_TARGET: 75,
+  PROTEIN_TOP: 90,
 
   // One-tap protein buttons. Edit, add or remove freely.
   PROTEIN_PRESETS: [
