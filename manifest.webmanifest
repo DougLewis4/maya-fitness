@@ -1,0 +1,15 @@
+{
+  "name": "26 Weeks",
+  "short_name": "26 Weeks",
+  "description": "Workouts, protein, creatine and measurements, counting down to the wedding.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#FFF6F9",
+  "theme_color": "#FFF6F9",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
